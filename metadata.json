@@ -1,0 +1,7 @@
+{
+  "name": "Google Backlink Indexer & SEO Reporter",
+  "description": "Professional SEO backlink indexing engine with direct Google Indexing API, IndexNow protocol, live Google SERP index verification, automated client reporting, and developer API integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
