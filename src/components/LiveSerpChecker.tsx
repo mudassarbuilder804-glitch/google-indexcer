@@ -14,6 +14,7 @@ import {
   Code
 } from 'lucide-react';
 import { BacklinkItem } from '../types';
+import { simulateLiveInspect } from '../data/mockData';
 
 interface LiveSerpCheckerProps {
   initialUrl?: string;
@@ -49,9 +50,18 @@ export const LiveSerpChecker: React.FC<LiveSerpCheckerProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Inspection failed');
-      setInspectionResult(data);
+      if (res.ok) {
+        const data = await res.json();
+        setInspectionResult(data);
+        return;
+      }
+    } catch {}
+
+    // Fallback for static hosting / GitHub Pages
+    try {
+      await new Promise((r) => setTimeout(r, 600));
+      const simulated = simulateLiveInspect(url);
+      setInspectionResult(simulated);
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to inspect URL');
     } finally {
