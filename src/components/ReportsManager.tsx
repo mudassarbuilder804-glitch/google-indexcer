@@ -5,7 +5,8 @@ import {
   Printer,
   Building,
   ShieldCheck,
-  Plus
+  Plus,
+  Download
 } from 'lucide-react';
 import { SEOReport, IndexingJob } from '../types';
 
@@ -36,6 +37,35 @@ export const ReportsManager: React.FC<ReportsManagerProps> = ({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportCsv = () => {
+    if (!selectedReport) return;
+    const matchingJob = jobs.find((j) => j.id === selectedReport.jobId);
+    if (matchingJob) {
+      window.location.href = `/api/indexer/jobs/${matchingJob.id}/export-csv`;
+    } else {
+      // Client-side fallback export
+      const rows = [
+        ['Client Name', selectedReport.clientName],
+        ['Campaign', selectedReport.jobName],
+        ['Target Domain', selectedReport.targetDomain],
+        ['Total Submitted', String(selectedReport.totalSubmitted)],
+        ['Total Indexed', String(selectedReport.totalIndexed)],
+        ['Index Rate', `${selectedReport.indexRate}%`],
+        [],
+        ['Tier', 'Total', 'Indexed', 'Rate'],
+        ...selectedReport.tierBreakdown.map(t => [t.tier, String(t.total), String(t.indexed), `${t.rate}%`]),
+      ];
+      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `seo-report-${selectedReport.clientName.toLowerCase().replace(/\s+/g, '-')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
@@ -134,6 +164,13 @@ export const ReportsManager: React.FC<ReportsManagerProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportCsv}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition flex items-center gap-1.5 shadow"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Export CSV</span>
+                  </button>
                   <button
                     onClick={handlePrint}
                     className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition flex items-center gap-1.5 shadow"

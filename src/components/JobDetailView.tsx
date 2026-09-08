@@ -329,6 +329,39 @@ export const JobDetailView: React.FC<JobDetailViewProps> = ({
                             {item.pageTitle}
                           </div>
                         )}
+                        {/* Schema.org & Protocol Badges */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                          {item.schemaEligibility?.isEligible ? (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                              ✓ Job/Event Schema (Google API Eligible)
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 border border-amber-500/20" title={item.schemaEligibility?.reason || 'Non-job schema'}>
+                              IndexNow/Sitemap Route
+                            </span>
+                          )}
+
+                          {item.pingResults?.googleApi?.success && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                              Google API: Sent
+                            </span>
+                          )}
+                          {item.pingResults?.indexNow?.success && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800">
+                              IndexNow: Sent
+                            </span>
+                          )}
+                          {item.pingResults?.bingWebmaster?.success && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
+                              Bing API: Sent
+                            </span>
+                          )}
+                          {item.pingResults?.sitemapPing?.success && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-400 border border-indigo-800">
+                              Sitemap: Pinged
+                            </span>
+                          )}
+                        </div>
                         {item.diagnostics && (
                           <div className="text-[10px] text-slate-500 mt-1 line-clamp-1 italic">
                             {item.diagnostics}

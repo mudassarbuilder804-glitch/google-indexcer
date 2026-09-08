@@ -19,9 +19,12 @@ interface SubmissionFormProps {
   onSubmit: (data: {
     name: string;
     targetDomain: string;
+    clientName?: string;
+    projectName?: string;
     urls: string[];
     dripSpeed: DripSpeed;
     activeProtocols: string[];
+    bypassSchemaRestriction?: boolean;
     notes?: string;
   }) => Promise<void>;
   isSubmitting: boolean;
@@ -45,16 +48,19 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
   onSuccess,
 }) => {
   const [name, setName] = useState('');
+  const [clientName, setClientName] = useState('Enterprise Growth Client');
+  const [projectName, setProjectName] = useState('Q2 Authority Backlinks Push');
   const [targetDomain, setTargetDomain] = useState('https://mywebsite.com');
   const [rawUrls, setRawUrls] = useState('');
   const [dripSpeed, setDripSpeed] = useState<DripSpeed>('drip_3d');
   const [activeProtocols, setActiveProtocols] = useState<string[]>([
     'google_api',
     'index_now',
+    'bing_webmaster',
     'sitemap_ping',
-    'ping_o_matic',
-    'rss_syndicate',
+    'gsc_inspection',
   ]);
+  const [bypassSchemaRestriction, setBypassSchemaRestriction] = useState(false);
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -151,9 +157,12 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
       await onSubmit({
         name,
         targetDomain,
+        clientName,
+        projectName,
         urls: validation.validUrls,
         dripSpeed,
         activeProtocols,
+        bypassSchemaRestriction,
         notes,
       });
 
@@ -174,9 +183,9 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
             <Zap className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-black text-white">Submit Backlink URLs for Google Indexing</h2>
+            <h2 className="text-lg font-black text-white">Google Backlink Indexer &amp; Multi-Channel Submitter</h2>
             <p className="text-xs text-slate-400">
-              Validated multi-tier submission with automated Google Indexing API &amp; IndexNow protocol dispatch
+              Automated Google Indexing API, IndexNow (Bing/Yandex), Bing Webmaster API, and GSC URL Inspection
             </p>
           </div>
         </div>
@@ -189,6 +198,21 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
           <Sparkles className="w-3.5 h-3.5" />
           <span>Load Sample Backlinks</span>
         </button>
+      </div>
+
+      {/* Structured Data Compliance Rule Banner */}
+      <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-2">
+        <div className="flex items-center gap-2 font-bold text-amber-300">
+          <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <span>Structured Data Rule (Google Indexing API Policy)</span>
+        </div>
+        <p className="text-[11px] leading-relaxed text-amber-200/90">
+          Google Indexing API sirf <strong>JobPosting</strong> aur <strong>BroadcastEvent</strong> structured data (Schema.org JSON-LD) wale pages accept karti hai.
+          System har submitted URL ko check karta hai. Agar schema missing ho:
+          <span className="block mt-1 p-2 rounded bg-amber-950/60 border border-amber-500/40 font-mono text-[11px] text-amber-300">
+            &ldquo;Yeh URL Google Indexing API ke eligible criteria pe fit nahi baitha, IndexNow ya sitemap method use hoga&rdquo;
+          </span>
+        </p>
       </div>
 
       {/* Alert Notices */}
@@ -208,8 +232,8 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
 
       <form onSubmit={handleSubmit} className="space-y-5 text-xs">
         
-        {/* Campaign Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Campaign & Client Info */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label className="block font-semibold text-slate-300 mb-1">
               Campaign Name <span className="text-rose-400">*</span>
@@ -219,23 +243,47 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., DA 50+ Guest Posts April Batch"
-              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+              placeholder="e.g., High DA Guest Posts Batch #1"
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
               required
             />
           </div>
 
           <div>
+            <label className="block font-semibold text-slate-300 mb-1">Client Name</label>
+            <input
+              id="submission-client-name"
+              type="text"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="e.g., Acme Corp SEO"
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-300 mb-1">Project Tag</label>
+            <input
+              id="submission-project-name"
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="e.g., Q2 Tier-1 Outreach"
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+            />
+          </div>
+
+          <div>
             <label className="block font-semibold text-slate-300 mb-1">
-              Target Money Site URL <span className="text-rose-400">*</span>
+              Target Money Site <span className="text-rose-400">*</span>
             </label>
             <input
               id="submission-target-domain"
               type="url"
               value={targetDomain}
               onChange={(e) => setTargetDomain(e.target.value)}
-              placeholder="https://cloudflow-analytics.io"
-              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs font-mono"
+              placeholder="https://mywebsite.com"
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs font-mono"
               required
             />
           </div>
@@ -331,9 +379,21 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
 
         {/* Multi-Vector Protocols */}
         <div>
-          <label className="block font-semibold text-slate-300 mb-1.5">
-            Active Indexing Protocol Endpoints
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="font-semibold text-slate-300">
+              Active Multi-Channel Indexing Protocols
+            </label>
+            <label className="flex items-center gap-1.5 text-[11px] text-amber-400 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={bypassSchemaRestriction}
+                onChange={(e) => setBypassSchemaRestriction(e.target.checked)}
+                className="rounded border-slate-700 text-amber-500 focus:ring-0"
+              />
+              <span>Force Google API even without JobPosting/BroadcastEvent</span>
+            </label>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             
             <div
@@ -351,7 +411,10 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
                   <Square className="w-4 h-4 text-slate-500" />
                 )}
                 <div>
-                  <div className="font-bold text-slate-200">Google Indexing API</div>
+                  <div className="font-bold text-slate-200 flex items-center gap-1.5">
+                    <span>Google Indexing API</span>
+                    <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Job/Event Schema</span>
+                  </div>
                   <div className="text-[10px] text-slate-400">Direct Search Console URL_UPDATED broadcast</div>
                 </div>
               </div>
@@ -375,8 +438,8 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
                   <Square className="w-4 h-4 text-slate-500" />
                 )}
                 <div>
-                  <div className="font-bold text-slate-200">IndexNow Multi-Engine</div>
-                  <div className="text-[10px] text-slate-400">Bing, Yandex, Seznam, Naver &amp; IndexNow</div>
+                  <div className="font-bold text-slate-200">IndexNow Protocol</div>
+                  <div className="text-[10px] text-slate-400">Bing, Yandex, Seznam, Naver (Recommended for all URLs)</div>
                 </div>
               </div>
               <span className="text-[10px] font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
@@ -385,26 +448,50 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
             </div>
 
             <div
-              onClick={() => handleToggleProtocol('rss_syndicate')}
+              onClick={() => handleToggleProtocol('bing_webmaster')}
               className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between ${
-                activeProtocols.includes('rss_syndicate')
-                  ? 'bg-slate-800/90 border-amber-500/50'
+                activeProtocols.includes('bing_webmaster')
+                  ? 'bg-slate-800/90 border-cyan-500/50'
                   : 'bg-slate-950/40 border-slate-800 opacity-60'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                {activeProtocols.includes('rss_syndicate') ? (
-                  <CheckSquare className="w-4 h-4 text-amber-400" />
+                {activeProtocols.includes('bing_webmaster') ? (
+                  <CheckSquare className="w-4 h-4 text-cyan-400" />
                 ) : (
                   <Square className="w-4 h-4 text-slate-500" />
                 )}
                 <div>
-                  <div className="font-bold text-slate-200">RSS Syndication Feed</div>
-                  <div className="text-[10px] text-slate-400">Generates live XML crawler discovery feed</div>
+                  <div className="font-bold text-slate-200">Bing Webmaster API</div>
+                  <div className="text-[10px] text-slate-400">Official URL Submission API (10,000/day quota)</div>
                 </div>
               </div>
-              <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
-                Feed XML
+              <span className="text-[10px] font-black text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">
+                Bing Official
+              </span>
+            </div>
+
+            <div
+              onClick={() => handleToggleProtocol('gsc_inspection')}
+              className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between ${
+                activeProtocols.includes('gsc_inspection')
+                  ? 'bg-slate-800/90 border-purple-500/50'
+                  : 'bg-slate-950/40 border-slate-800 opacity-60'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                {activeProtocols.includes('gsc_inspection') ? (
+                  <CheckSquare className="w-4 h-4 text-purple-400" />
+                ) : (
+                  <Square className="w-4 h-4 text-slate-500" />
+                )}
+                <div>
+                  <div className="font-bold text-slate-200">GSC URL Inspection API</div>
+                  <div className="text-[10px] text-slate-400">Ban-proof status check via Search Console API</div>
+                </div>
+              </div>
+              <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                Safe Inspect
               </span>
             </div>
 
@@ -423,8 +510,8 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
                   <Square className="w-4 h-4 text-slate-500" />
                 )}
                 <div>
-                  <div className="font-bold text-slate-200">Search Engine Sitemaps Auto-Ping</div>
-                  <div className="text-[10px] text-slate-400">Pings official search engine crawlers</div>
+                  <div className="font-bold text-slate-200">Sitemap &amp; Engine Ping</div>
+                  <div className="text-[10px] text-slate-400">Pings search engine crawlers with dynamic sitemap</div>
                 </div>
               </div>
               <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">

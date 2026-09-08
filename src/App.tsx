@@ -170,9 +170,12 @@ export default function App() {
   const handleSubmitCampaign = async (campaignData: {
     name: string;
     targetDomain: string;
+    clientName?: string;
+    projectName?: string;
     urls: string[];
     dripSpeed: DripSpeed;
     activeProtocols: string[];
+    bypassSchemaRestriction?: boolean;
     notes?: string;
   }) => {
     setIsSubmitting(true);

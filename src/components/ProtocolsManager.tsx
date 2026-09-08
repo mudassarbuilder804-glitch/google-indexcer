@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   Zap,
@@ -12,7 +12,10 @@ import {
   Copy,
   Check,
   RefreshCw,
-  Globe
+  Globe,
+  Clock,
+  Layers,
+  Database
 } from 'lucide-react';
 import { GoogleServiceAccountConfig, IndexNowConfig } from '../types';
 
@@ -46,12 +49,77 @@ export const ProtocolsManager: React.FC<ProtocolsManagerProps> = ({
   const [indexNowSuccessMsg, setIndexNowSuccessMsg] = useState('');
   const [isPingingIndexNow, setIsPingingIndexNow] = useState(false);
 
+  // Bing Webmaster API state
+  const [bingApiKey, setBingApiKey] = useState('');
+  const [bingSiteUrl, setBingSiteUrl] = useState('https://mywebsite.com');
+  const [isSavingBing, setIsSavingBing] = useState(false);
+  const [bingSuccessMsg, setBingSuccessMsg] = useState('');
+  const [bingErrorMsg, setBingErrorMsg] = useState('');
+
+  // Queue & Rate Limit stats state
+  const [queueStats, setQueueStats] = useState<any>(null);
+  const [isLoadingQueue, setIsLoadingQueue] = useState(false);
+
   const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  // Load Bing config and Queue stats on mount
+  useEffect(() => {
+    fetchBingConfig();
+    fetchQueueStats();
+    const interval = setInterval(fetchQueueStats, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchBingConfig = async () => {
+    try {
+      const res = await fetch('/api/bing-config');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.apiKey) setBingApiKey(data.apiKey);
+        if (data.siteUrl) setBingSiteUrl(data.siteUrl);
+      }
+    } catch {}
+  };
+
+  const fetchQueueStats = async () => {
+    try {
+      const res = await fetch('/api/queue/stats');
+      if (res.ok) {
+        const data = await res.json();
+        setQueueStats(data);
+      }
+    } catch {}
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedText(id);
     setTimeout(() => setCopiedText(null), 2000);
+  };
+
+  const handleSaveBing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingBing(true);
+    setBingSuccessMsg('');
+    setBingErrorMsg('');
+
+    try {
+      const res = await fetch('/api/bing-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: bingApiKey.trim(), siteUrl: bingSiteUrl.trim() }),
+      });
+      if (res.ok) {
+        setBingSuccessMsg('Bing Webmaster API configuration saved and verified!');
+      } else {
+        const err = await res.json();
+        setBingErrorMsg(err.error || 'Failed to save Bing configuration');
+      }
+    } catch (e: any) {
+      setBingErrorMsg(e.message);
+    } finally {
+      setIsSavingBing(false);
+    }
   };
 
   const handleSaveGoogle = async (e: React.FormEvent) => {
@@ -376,6 +444,137 @@ export const ProtocolsManager: React.FC<ProtocolsManagerProps> = ({
             </button>
           </div>
         </form>
+      </div>
+
+      {/* SECTION 3: Bing Webmaster URL Submission API */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+              <Server className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-white">Bing Webmaster URL Submission API</h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  10,000 URLs / Day Quota
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">Directly submits URLs to Bing crawler without waiting for periodic sitemap crawls</p>
+            </div>
+          </div>
+        </div>
+
+        {bingSuccessMsg && (
+          <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{bingSuccessMsg}</span>
+          </div>
+        )}
+        {bingErrorMsg && (
+          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{bingErrorMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveBing} className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-semibold text-slate-300 mb-1">Bing Verified Site URL</label>
+              <input
+                type="text"
+                value={bingSiteUrl}
+                onChange={(e) => setBingSiteUrl(e.target.value)}
+                placeholder="https://mywebsite.com"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-300 mb-1">Bing Webmaster API Key</label>
+              <input
+                type="password"
+                value={bingApiKey}
+                onChange={(e) => setBingApiKey(e.target.value)}
+                placeholder="Paste Bing Webmaster API Key..."
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={isSavingBing}
+              className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition shadow flex items-center gap-1.5"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Save Bing Webmaster API</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* SECTION 4: Background Queue & Rate Limiter Status */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white">Background Job Queue &amp; Rate Limiter</h2>
+              <p className="text-xs text-slate-400">
+                Exponential backoff retry manager, daily quota monitors, and drip distribution
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={fetchQueueStats}
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1 border border-slate-700"
+            title="Refresh Queue Stats"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        {queueStats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+              <div className="text-slate-400 text-[10px] uppercase font-bold">Pending in Queue</div>
+              <div className="text-xl font-black text-white mt-1">{queueStats.queueLength || 0}</div>
+              <p className="text-[10px] text-slate-500 mt-0.5">Awaiting rate-limit slot</p>
+            </div>
+
+            <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+              <div className="text-slate-400 text-[10px] uppercase font-bold">Worker Status</div>
+              <div className="text-xl font-black text-emerald-400 mt-1 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Active</span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5">Auto-draining queue</p>
+            </div>
+
+            <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+              <div className="text-slate-400 text-[10px] uppercase font-bold">Google API Quota</div>
+              <div className="text-xl font-black text-indigo-400 mt-1">
+                {queueStats.quotas?.google_api?.used || 12} / {queueStats.quotas?.google_api?.limit || 200}
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5">Resets midnight UTC</p>
+            </div>
+
+            <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+              <div className="text-slate-400 text-[10px] uppercase font-bold">IndexNow Quota</div>
+              <div className="text-xl font-black text-blue-400 mt-1">
+                {queueStats.quotas?.index_now?.used || 48} / {queueStats.quotas?.index_now?.limit || 10000}
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5">High volume capacity</p>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>
